@@ -71,7 +71,7 @@ function checkWinner() {
 function displayResult(result) {
     const resultDiv = document.getElementById('result');
     if (result === 'tie') {
-        resultDiv.innerHTML = '平局！';
+        resultDiv.innerHTML = '<img src="assets/images/draw.png" class="result-image">';
     } else if (result === 'player1') {
         resultDiv.innerHTML = '<img src="assets/images/sheep win.png" class="result-image">';
     } else {
