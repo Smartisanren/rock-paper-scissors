@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>私董会流程管理系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #64B5F6;
+            --background-color: #F5F5F5;
+            --text-color: #333;
+            --border-radius: 8px;
+            --transition-time: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            min-width: 320px;
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .process-container {
+            display: block;
+            width: 100%;
+        }
+
+        .timer-input-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .step-input-section {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .step-input-section textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        .step-input-section textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+
+        @media screen and (max-width: 768px) {
+            .process-container {
+                grid-template-columns: 1fr;
+            }
+
+            .timer-section {
+                max-width: 100%;
+            }
+
+            .timer-display {
+                font-size: 2.5em;
+            }
+
+            .timer-controls {
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                width: calc(50% - 5px);
+                margin-bottom: 10px;
+            }
+
+            .step-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .step-time {
+                margin-top: 5px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .timer-display {
+                font-size: 2em;
+            }
+
+            .participant {
+                width: calc(50% - 5px);
+                text-align: center;
+            }
+        }
+
+        .timer-section {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .timer-display {
+            font-size: 6em;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+            color: var(--primary-color);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-display.running {
+            color: #4CAF50;
+        }
+
+        .timer-display.warning {
+            color: #f44336;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all var(--transition-time);
+            font-size: 1em;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .process-steps {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .step {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: var(--border-radius);
+            background: var(--background-color);
+            cursor: pointer;
+            transition: all var(--transition-time);
+        }
+
+        .step.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* Align items to the top */
+            margin-bottom: 10px;
+        }
+
+        .step-info {
+            flex-grow: 1; /* Allow info to take available space */
+            margin-right: 10px; /* Add some space between info and time */
+        }
+
+        .step-time {
+            font-weight: bold;
+            cursor: pointer; /* Indicate it's clickable */
+            padding: 2px 5px; /* Add some padding for easier clicking */
+            border-radius: 4px; /* Slightly round corners */
+            transition: background-color var(--transition-time);
+            white-space: nowrap; /* Prevent time from wrapping */
+        }
+
+        .step-time:hover {
+            background-color: rgba(0,0,0,0.1); /* Subtle hover effect */
+        }
+
+        .step-content {
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .participants-section {
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .participant-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .participant {
+            background: var(--background-color);
+            padding: 5px 10px;
+            border-radius: var(--border-radius);
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="header">
+            <h1>私董会流程管理系统</h1>
+        </div>
+
+        <div class="process-container" v-if="!isRunning">
+            <div class="process-steps">
+                <div v-for="(step, index) in steps" 
+                     :key="index"
+                     :class="['step', { active: currentStep === index }]"
+                     @click="selectStep(index)"
+                     @dblclick="startTimer">
+                    <div class="step-header">
+                        <div class="step-info">
+                            <span>{{ step.name }}</span>
+                            <div class="step-content">{{ step.description }}</div>
+                        </div>
+                        <span class="step-time" @dblclick.stop="customizeTime($event, index)">{{ step.time }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 计时开始后，切换为上下布局 -->
+        <div v-if="isRunning" class="timer-input-layout">
+            <div class="timer-section" style="margin-bottom:20px;">
+                <div :class="['timer-display', { 'running': isRunning && timeRemaining > 10, 'warning': timeRemaining <= 10 }]">{{ formatTime }}</div>
+                <div class="timer-controls">
+                    <button @click="pauseTimer" class="btn btn-secondary" :disabled="!isRunning">暂停</button>
+                    <button @click="resetTimer" class="btn btn-secondary">重置</button>
+                    <button v-if="timeRemaining === 0" @click="backToSelection" class="btn btn-primary">返回选择</button>
+                </div>
+            </div>
+            <div class="step-input-section">
+                <label style="font-weight:bold;">当前流程：{{ steps[currentStep].name }}</label>
+                <textarea v-model="stepInputs[currentStep]" rows="6" style="width:100%;margin-top:10px;resize:vertical;" placeholder="请输入本环节内容..."></textarea>
+            </div>
+        </div>
+
+        <!-- 导出按钮 -->
+        <div style="margin-top:30px;text-align:center;">
+            <button class="btn btn-primary" @click="exportContent('word')">导出为Word</button>
+            <button class="btn btn-secondary" @click="exportContent('pdf')" style="margin-left:10px;">导出为PDF</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    timeRemaining: 0,
+                    isRunning: false,
+                    timer: null,
+                    currentStep: 0,
+                    customDurations: {},
+                    steps: [
+                        { name: '暖场', time: '90s', description: '自我介绍', duration: 90 },
+                        { name: '保密宣言', time: '60s', description: '本人不会将今天会议中各位交流的个人信息和所在组织的信息，以任何形式对外公开或泄露。', duration: 60 },
+                        { name: '提出问题', time: '30s', description: '按照顺序每人提出问题，没有问题跳过。必须是：自己的问题，当下的问题，是不能要的问题。', duration: 30 },
+                        { name: '投票定案主', time: '180s', description: '第一轮投票：每人有无限多的票，可以自己投自己。第二轮投票：票数最多的2-3个进行1分钟发言说明，一人只投一票。', duration: 180 },
+                        { name: '案主讲问题', time: '180s', description: '进一步详细阐述问题的相关背景信息。', duration: 180 },
+                        { name: '提问与回答', time: '90s', description: '第一轮提问：收集首轮信息\n第二轮提问：收集特定信息', duration: 90 },
+                        { name: '希望反馈', time: '180s', description: '感受：我感受到开心、惊恐、沮丧、激动......\n定性：我认为案主真正的问题是......\n分享：分享一个自己所经历的故事或其他第一手材料。', duration: 180 },
+                        { name: '案主总结', time: '300s', description: '思考5min：请案主出去独自思考总结，希望可以休息。\n总结5min：今天有什么收获，接下来最想做的事有哪些。', duration: 300 },
+                        { name: '希望总结', time: '90s', description: '今天有什么收获，接下来最想做的事有哪些，可以给案主什么支持。', duration: 90 },
+                        { name: '复盘', time: '30s', description: '每个人讲：自己的收获。', duration: 30 }
+                    ],
+
+                    stepInputs: Array(10).fill('')
+                }
+            },
+            computed: {
+                formatTime() {
+                    const minutes = Math.floor(this.timeRemaining / 60)
+                    const seconds = this.timeRemaining % 60
+                    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                }
+            },
+            methods: {
+                startTimer() {
+                    if (!this.isRunning) {
+                        this.isRunning = true
+                        this.timer = setInterval(() => {
+                            if (this.timeRemaining > 0) {
+                                this.timeRemaining--
+                            } else {
+                                this.pauseTimer()
+                            }
+                        }, 1000)
+                    }
+                },
+                pauseTimer() {
+                    this.isRunning = false
+                    clearInterval(this.timer)
+                },
+                resetTimer() {
+                    this.pauseTimer()
+                    this.timeRemaining = this.steps[this.currentStep].duration
+                },
+                selectStep(index) {
+                    this.currentStep = index
+                    this.pauseTimer()
+                    this.timeRemaining = this.customDurations[index] || this.steps[index].duration
+                },
+                customizeTime(event, index) {
+                    event.stopPropagation()
+                    const newDuration = prompt('请输入新的时长（秒）：', this.steps[index].duration)
+                    if (newDuration && !isNaN(newDuration) && newDuration > 0) {
+                        this.customDurations[index] = parseInt(newDuration)
+                        this.steps[index].time = `${newDuration}s`
+                        if (this.currentStep === index) {
+                            this.timeRemaining = parseInt(newDuration)
+                        }
+                    }
+                },
+                backToSelection() {
+                    this.isRunning = false
+                    this.timeRemaining = this.customDurations[this.currentStep] || this.steps[this.currentStep].duration
+                },
+                exportContent(type) {
+                    // 导出功能实现
+                    const stepContents = this.steps.map((step, idx) => {
+                        return `【${step.name}】\n${this.stepInputs[idx] || ''}\n`;
+                    }).join('\n');
+                    const title = '私董会流程记录';
+                    if(type === 'word') {
+                        const html = `<html><head><meta charset='utf-8'><title>${title}</title></head><body><h2>${title}</h2><pre>${stepContents}</pre></body></html>`;
+                        const blob = new Blob([html], {type: 'application/msword'});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${title}.doc`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    } else if(type === 'pdf') {
+                        // 简易PDF导出（需依赖jsPDF）
+                        if(typeof window.jspdf === 'undefined') {
+                            const script = document.createElement('script');
+                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                            script.onload = () => this.exportContent('pdf');
+                            document.body.appendChild(script);
+                            return;
+                        }
+                        const { jsPDF } = window.jspdf;
+                        const doc = new jsPDF();
+                        doc.setFont('helvetica');
+                        doc.setFontSize(14);
+                        doc.text(title, 10, 15);
+                        let y = 30;
+                        this.steps.forEach((step, idx) => {
+                            doc.text(`【${step.name}】`, 10, y);
+                            y += 8;
+                            const lines = doc.splitTextToSize(this.stepInputs[idx] || '', 180);
+                            doc.text(lines, 10, y);
+                            y += lines.length * 8 + 4;
+                        });
+                        doc.save(`${title}.pdf`);
+                    }
+                }
+            },
+            mounted() {
+                this.timeRemaining = this.steps[0].duration
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
